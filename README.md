@@ -29,9 +29,4 @@ Because the project uses modern ES modules and Vite, you need to run it through 
 ### Prerequisites
 Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
 
-### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/deepvision.git
-   cd deepvision
