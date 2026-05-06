@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ResNet CNN Learning Explainer — Interactive visualization of how Residual Neural Networks learn visual features from images.">
+    <title>ResNet CNN Learning Explainer — DeepVision</title>
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="cnn.css">
+</head>
+<body>
+
+    <!-- ===== TOP NAV ===== -->
+    <nav class="topnav">
+        <a href="index.html" class="topnav__back">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Models
+        </a>
+        <span class="topnav__brand">DeepVision</span>
+    </nav>
+
+    <!-- ===== 1. HERO & INTRO ===== -->
+    <header class="hero" id="hero">
+        <div class="container hero__container">
+            <div class="hero__image">
+                <canvas id="hero-cnn-canvas"></canvas>
+            </div>
+            <div class="hero__content">
+                <h1 class="hero__title">ResNet CNN <span class="hero__title-thin">(Residual Neural Network)</span></h1>
+                <p class="hero__subtitle">Understanding how deep CNNs learn efficiently using skip connections</p>
+                <div class="hero__divider"></div>
+                <div class="intro__text">
+                    <p>A ResNet CNN is an improved version of a Convolutional Neural Network designed to overcome the limitations of very deep networks. It introduces residual learning, where the model learns differences instead of full mappings, making training faster and more accurate.</p>
+                </div>
+                
+                <div class="hero__features-grid">
+                    <div class="hero-feature-card">
+                        <div class="hero-feature-card__icon">🔗</div>
+                        <div>
+                            <h3>Residual Learning</h3>
+                            <p>Learns the difference instead of full mapping</p>
+                        </div>
+                    </div>
+                    
+                    <div class="hero-feature-card">
+                        <div class="hero-feature-card__icon">🚀</div>
+                        <div>
+                            <h3>Deep Network Capability</h3>
+                            <p>Supports very deep architectures (50, 101, 152 layers)</p>
+                        </div>
+                    </div>
+
+                    <!-- Formula Card (spans full width) -->
+                    <div class="hero-feature-card formula-card">
+                        <div class="resnet-formula">
+                            <div class="formula-term">
+                                <span class="formula-math">H(x)</span>
+                                <svg class="formula-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M8 8l4 4 4-4"/></svg>
+                                <span class="formula-label">Final Output</span>
+                            </div>
+                            <div class="formula-op">=</div>
+                            <div class="formula-term">
+                                <span class="formula-math">F(x)</span>
+                                <svg class="formula-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M8 8l4 4 4-4"/></svg>
+                                <span class="formula-label">Residual Mapping</span>
+                            </div>
+                            <div class="formula-op">+</div>
+                            <div class="formula-term">
+                                <span class="formula-math">x</span>
+                                <svg class="formula-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="M8 8l4 4 4-4"/></svg>
+                                <span class="formula-label">Identity / Input</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hero-feature-card">
+                        <div class="hero-feature-card__icon">🔁</div>
+                        <div>
+                            <h3>Skip Connections</h3>
+                            <p>Shortcut connections help info flow directly</p>
+                        </div>
+                    </div>
+                    
+                    <div class="hero-feature-card">
+                        <div class="hero-feature-card__icon">⚡</div>
+                        <div>
+                            <h3>Stable Training</h3>
+                            <p>Solves vanishing gradient problem and improves convergence</p>
+                        </div>
+                    </div>
+                    
+
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== 4. ARCHITECTURE ===== -->
+
+<section class="section architecture bg-white" id="architecture">
+    <div class="container-fluid" style="max-width: 100%; padding: 0 40px;">
+        <h2 class="section__title text-dark">ResNet Architecture</h2>
+        <p class="section__desc text-gray">How data flows through a Residual Neural Network</p>
+
+```
+    <div class="arch-pipeline">
+
+        <!-- 1. Input -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #3b82f6; background: rgba(59,130,246,0.1);">📷</div>
+            <h3>1. Input Image</h3>
+            <p>Raw pixel data (e.g., 224×224 RGB image) is fed into the network.</p>
+        </div>
+        
+        <div class="arch-connector">→</div>
+
+        <!-- 2. Initial Conv -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #8b5cf6; background: rgba(139,92,246,0.1);">🔍</div>
+            <h3>2. Initial Conv + ReLU</h3>
+            <p>Applies convolution filters to extract basic features like edges and textures, followed by ReLU activation.</p>
+        </div>
+
+        <div class="arch-connector">→</div>
+
+        <!-- 3. BatchNorm -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #06b6d4; background: rgba(6,182,212,0.1);">⚙️</div>
+            <h3>3. Batch Normalization</h3>
+            <p>Normalizes feature values to stabilize and speed up training.</p>
+        </div>
+
+        <div class="arch-connector">→</div>
+
+        <!-- 4. Max Pool -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #14b8a6; background: rgba(20,184,166,0.1);">📉</div>
+            <h3>4. Max Pooling</h3>
+            <p>Reduces spatial size while preserving important features.</p>
+        </div>
+
+        <div class="arch-connector">→</div>
+
+        <!-- 5. Residual Blocks -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #f59e0b; background: rgba(245,158,11,0.1);">🔗</div>
+            <h3>5. Residual Blocks</h3>
+            <p>
+                Core of ResNet. Each block contains:
+                Conv → BatchNorm → ReLU → Conv → BatchNorm → Add (Skip Connection) → ReLU.  
+                Skip connections allow input to bypass layers and be added back.
+            </p>
+        </div>
+
+        <div class="arch-connector">→</div>
+
+        <!-- 6. Global Average Pool -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #22c55e; background: rgba(34,197,94,0.1);">🌐</div>
+            <h3>6. Global Average Pooling</h3>
+            <p>Converts feature maps into a single vector by averaging, reducing overfitting.</p>
+        </div>
+
+        <div class="arch-connector">→</div>
+
+        <!-- 7. Fully Connected -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #ec4899; background: rgba(236,72,153,0.1);">🧠</div>
+            <h3>7. Fully Connected Layer</h3>
+            <p>Combines all features to make final predictions.</p>
+        </div>
+
+        <div class="arch-connector">→</div>
+
+        <!-- 8. Output -->
+        <div class="arch-card">
+            <div class="arch-card__icon" style="color: #ef4444; background: rgba(239,68,68,0.1);">🎯</div>
+            <h3>8. Output (Softmax)</h3>
+            <p>Outputs probabilities for each class. Highest value is the prediction.</p>
+        </div>
+
+    </div>
+</div>
+```
+
+</section>
+
+
+    <!-- ===== 5. INTERACTIVE VISUAL LEARNING ===== -->
+    <section class="section interactive-learning" id="interactive-learning">
+        <div class="container-fluid" style="max-width: 1200px; margin: 0 auto;">
+            
+            <div class="step-card">
+                <div class="step-card__header">
+                    <div class="step-number">1</div>
+                    <h2 class="step-title">Input Image Selection</h2>
+                </div>
+                <div class="step-card__body">
+                    <p class="step-desc">Upload an image to see how the ResNet interprets it. For best results, use a clear image (it will be resized to 28x28 grayscale for this demo model).</p>
+                    
+                    <div class="input-upload-layout">
+                        <!-- Upload Area -->
+                        <div class="upload-zone" id="upload-zone">
+                            <input type="file" id="image-upload-input" accept="image/*" hidden>
+                            <div class="upload-icon">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                            </div>
+                            <p>Click to browse or drag & drop</p>
+                            <span class="upload-hint">Supports JPG, PNG</span>
+                        </div>
+                        
+                        <!-- Preview Area -->
+                        <div class="preview-zone" id="preview-zone" style="display: none;">
+                            <div class="preview-container">
+                                <canvas id="input-preview-canvas"></canvas>
+                            </div>
+                            <div class="preview-metadata" id="preview-metadata">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-actions">
+                        <button class="btn-primary" id="btn-send-model" disabled>Send to Model 👉</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline connector -->
+            <div class="step-connector" id="step-connector-1-2" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Processing image through convolution filters…</span>
+            </div>
+
+            <!-- STEP 2: Initial Convolution Layer -->
+            <div class="step-card" id="step-2" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">2</div>
+                    <h2 class="step-title">Initial Convolution Layer <span class="hero__title-thin">– Feature Extraction</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> This layer slides small filters (kernels) across the image to detect basic features like edges and textures. Dark colors represent low activation values, while <em>bright, glowing colors</em> indicate strong feature detections.
+                        </div>
+                    </div>
+
+                    <!-- Convolution Scanning Animation -->
+                    <div class="conv-scanner" id="conv-scanner">
+                        <div class="conv-scanner__controls">
+                            <div class="scanner-tabs">
+                                <button class="scanner-tab active" data-filter="vertical">Sobel-X <span>Vertical</span></button>
+                                <button class="scanner-tab" data-filter="horizontal">Sobel-Y <span>Horizontal</span></button>
+                            </div>
+                            <div class="scanner-btns">
+                                <button class="btn-scanner btn-scanner--play" id="scanner-play">▶ Play</button>
+                                <button class="btn-scanner" id="scanner-step">⏭ Step</button>
+                                <button class="btn-scanner" id="scanner-reset">↻ Reset</button>
+                            </div>
+                            <div class="scanner-speed-ctrl">
+                                <span>Speed</span>
+                                <input type="range" id="scanner-speed" min="1" max="10" value="5">
+                            </div>
+                        </div>
+
+                        <div class="conv-scanner__grid">
+                            <div class="scanner-col">
+                                <h5>Input Image <span class="scanner-dim">16×16</span></h5>
+                                <div class="scanner-canvas-wrap">
+                                    <canvas id="scanner-input-canvas" width="256" height="256"></canvas>
+                                </div>
+                                <div class="scanner-info" id="scanner-pos">Kernel at (0, 0)</div>
+                            </div>
+
+                            <div class="scanner-col scanner-col--math">
+                                <h5>Multiply + Sum</h5>
+                                <div class="scanner-equation">
+                                    <div class="scanner-matrix-wrap">
+                                        <span class="scanner-matrix-title">Patch</span>
+                                        <div class="scanner-3x3" id="scanner-patch"></div>
+                                    </div>
+                                    <span class="scanner-op-sym">×</span>
+                                    <div class="scanner-matrix-wrap">
+                                        <span class="scanner-matrix-title">Filter</span>
+                                        <div class="scanner-3x3" id="scanner-filter-grid"></div>
+                                    </div>
+                                    <span class="scanner-op-sym">=</span>
+                                    <div class="scanner-matrix-wrap">
+                                        <span class="scanner-matrix-title">Output</span>
+                                        <div class="scanner-result-display" id="scanner-result">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="scanner-col">
+                                <h5>Feature Map <span class="scanner-dim">14×14</span></h5>
+                                <div class="scanner-canvas-wrap">
+                                    <canvas id="scanner-output-canvas" width="224" height="224"></canvas>
+                                </div>
+                                <div class="scanner-progress-wrap">
+                                    <div class="scanner-progress-bar"><div class="scanner-progress-fill" id="scanner-progress-fill"></div></div>
+                                    <span class="scanner-info" id="scanner-progress-text">0 / 196</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conv-grid" id="conv-grid">
+                        <!-- Original -->
+                        <div class="conv-item" id="conv-item-original">
+                            <h4>Original Image</h4>
+                            <div class="conv-canvas-wrapper">
+                                <canvas id="conv-canvas-original"></canvas>
+                                <div class="scan-overlay" id="scan-overlay-original"></div>
+                            </div>
+                            <div class="conv-intensity">
+                                <span class="conv-intensity-label">Input</span>
+                                <div class="conv-intensity-bar"><div class="conv-intensity-fill" id="intensity-original" style="width:100%;background:rgba(255,255,255,0.6)"></div></div>
+                            </div>
+                        </div>
+                        <!-- Vertical -->
+                        <div class="conv-item" id="conv-item-vertical">
+                            <h4>Vertical Edges <span class="kernel-hint">Sobel-X [-1,0,1]</span></h4>
+                            <div class="conv-canvas-wrapper glow-cyan">
+                                <canvas id="conv-canvas-vertical"></canvas>
+                                <div class="scan-overlay" id="scan-overlay-vertical"></div>
+                            </div>
+                            <div class="conv-intensity">
+                                <span class="conv-intensity-label">Activation</span>
+                                <div class="conv-intensity-bar"><div class="conv-intensity-fill intensity-cyan" id="intensity-vertical"></div></div>
+                                <span class="conv-intensity-value" id="intensity-val-vertical">0%</span>
+                            </div>
+                        </div>
+                        <!-- Horizontal -->
+                        <div class="conv-item" id="conv-item-horizontal">
+                            <h4>Horizontal Edges <span class="kernel-hint">Sobel-Y [1,2,1]</span></h4>
+                            <div class="conv-canvas-wrapper glow-magenta">
+                                <canvas id="conv-canvas-horizontal"></canvas>
+                                <div class="scan-overlay" id="scan-overlay-horizontal"></div>
+                            </div>
+                            <div class="conv-intensity">
+                                <span class="conv-intensity-label">Activation</span>
+                                <div class="conv-intensity-bar"><div class="conv-intensity-fill intensity-magenta" id="intensity-horizontal"></div></div>
+                                <span class="conv-intensity-value" id="intensity-val-horizontal">0%</span>
+                            </div>
+                        </div>
+                        <!-- Combined -->
+                        <div class="conv-item" id="conv-item-combined">
+                            <h4>Combined Edge Map <span class="kernel-hint">√(Gx² + Gy²)</span></h4>
+                            <div class="conv-canvas-wrapper glow-gold">
+                                <canvas id="conv-canvas-combined"></canvas>
+                                <div class="scan-overlay" id="scan-overlay-combined"></div>
+                            </div>
+                            <div class="conv-intensity">
+                                <span class="conv-intensity-label">Magnitude</span>
+                                <div class="conv-intensity-bar"><div class="conv-intensity-fill intensity-gold" id="intensity-combined"></div></div>
+                                <span class="conv-intensity-value" id="intensity-val-combined">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="conv-summary" id="conv-summary" style="display:none;">
+                        <div class="conv-summary-icon">✅</div>
+                        <p>Feature extraction complete — edges and patterns have been identified and will be passed to the next layer for further processing.</p>
+                    </div>
+
+
+                </div>
+            </div>
+
+            <!-- Pipeline connector 2-3 -->
+            <div class="step-connector" id="step-connector-2-3" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Passing feature map to Activation Layer…</span>
+            </div>
+
+            <!-- STEP 3: ReLU Activation -->
+            <div class="step-card" id="step-3" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">3</div>
+                    <h2 class="step-title">ReLU Activation <span class="hero__title-thin">– Non-Linearity</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> ReLU (Rectified Linear Unit) keeps strong positive activations but turns negative or weak noise into zero (black). This makes the network non-linear and helps it focus only on the most important edges.
+                        </div>
+                    </div>
+
+                    <div class="compare-grid">
+                        <div class="conv-item">
+                            <h4>Convolution Output <span class="kernel-hint">Combined Edges</span></h4>
+                            <div class="conv-canvas-wrapper glow-gold" style="width:180px;height:180px;margin:0 auto">
+                                <canvas id="relu-input-canvas" width="128" height="128"></canvas>
+                            </div>
+                        </div>
+                        <div class="conv-item" id="relu-output-item">
+                            <h4>ReLU Output <span class="kernel-hint">max(0, x)</span></h4>
+                            <div class="conv-canvas-wrapper glow-cyan" style="width:180px;height:180px;margin:0 auto">
+                                <canvas id="relu-output-canvas" width="128" height="128"></canvas>
+                                <div class="scan-overlay" id="scan-overlay-relu"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline connector 3-4 -->
+            <div class="step-connector" id="step-connector-3-4" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Passing activated features to Normalization…</span>
+            </div>
+
+            <!-- STEP 4: Batch Normalization -->
+            <div class="step-card" id="step-4" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">4</div>
+                    <h2 class="step-title">Batch Normalization <span class="hero__title-thin">– Stabilization</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> BatchNorm stabilizes learning by normalizing the activation values. You'll notice the extremely bright highlights are tamed and the overall contrast becomes more uniform and distributed.
+                        </div>
+                    </div>
+
+                    <div class="compare-grid">
+                        <div class="conv-item">
+                            <h4>ReLU Output <span class="kernel-hint">Pre-norm</span></h4>
+                            <div class="conv-canvas-wrapper glow-cyan" style="width:180px;height:180px;margin:0 auto">
+                                <canvas id="bn-input-canvas" width="128" height="128"></canvas>
+                            </div>
+                        </div>
+                        <div class="conv-item" id="bn-output-item">
+                            <h4>BatchNorm Output <span class="kernel-hint">(x - μ) / σ</span></h4>
+                            <div class="conv-canvas-wrapper glow-magenta" style="width:180px;height:180px;margin:0 auto">
+                                <canvas id="bn-output-canvas" width="128" height="128"></canvas>
+                                <div class="scan-overlay" id="scan-overlay-bn"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline connector 4-5 -->
+            <div class="step-connector" id="step-connector-4-5" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Passing normalized features to Pooling Layer…</span>
+            </div>
+
+            <!-- STEP 5: Max Pooling -->
+            <div class="step-card" id="step-5" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">5</div>
+                    <h2 class="step-title">Max Pooling <span class="hero__title-thin">– Downsampling</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> Max Pooling reduces the spatial dimensions (width and height) by sliding a 2x2 window over the map and keeping only the maximum value. This compresses the data while preserving the most important features.
+                        </div>
+                    </div>
+
+                    <div class="conv-scanner__controls" style="margin-top: 24px;">
+                        <button class="btn-scanner btn-scanner--play" id="pool-play">▶ Play Downsampling</button>
+                        <button class="btn-scanner" id="pool-step">⏭ Step</button>
+                        <div class="scanner-speed-ctrl">
+                            <span>Speed</span>
+                            <input type="range" id="pool-speed" min="1" max="10" value="5">
+                        </div>
+                    </div>
+
+                    <div class="visual-grid" style="margin-top: 24px;">
+                        <!-- Input (Left) -->
+                        <div class="vis-panel vis-panel--input">
+                            <h4>BatchNorm Output <span class="kernel-hint">128×128</span></h4>
+                            <div class="vis-panel__canvas-wrap">
+                                <canvas id="pool-input-canvas" width="128" height="128" style="image-rendering: pixelated; width: 100%; max-width: 250px;"></canvas>
+                                <div id="pool-scanner-box" style="position:absolute; border:1px solid #fff; box-shadow:0 0 8px #fff; display:none; pointer-events:none; transition:left 0.1s linear, top 0.1s linear; box-sizing: border-box;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Math Engine (Center) -->
+                        <div class="vis-panel" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <h4>Active 2×2 Window</h4>
+                            <div class="pool-math-engine" id="pool-math-engine">
+                                <div class="pool-cell" id="pool-cell-0">-</div>
+                                <div class="pool-cell" id="pool-cell-1">-</div>
+                                <div class="pool-cell" id="pool-cell-2">-</div>
+                                <div class="pool-cell" id="pool-cell-3">-</div>
+                            </div>
+                            <div class="kernel-hint" style="margin-top: 16px; font-size: 0.85rem;" id="pool-status">Ready</div>
+                        </div>
+
+                        <!-- Output (Right) -->
+                        <div class="vis-panel">
+                            <h4>Pooled Output <span class="kernel-hint">64×64</span></h4>
+                            <div class="vis-panel__canvas-wrap">
+                                <canvas id="pool-output-canvas" width="64" height="64" style="image-rendering: pixelated; width: 100%; max-width: 250px;"></canvas>
+                                <div id="pool-hover-box" style="position:absolute; width:4px; height:4px; border:1px solid #fff; display:none; pointer-events:none; box-sizing: border-box;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline connector -->
+            <div class="step-connector" id="step-connector-5-6" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Passing features to Residual Block...</span>
+            </div>
+
+            <!-- STEP 6: Residual Block -->
+            <div class="step-card" id="step-6" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">6</div>
+                    <h2 class="step-title">Residual Block <span class="hero__title-thin">– Skip Connection (ResNet Core)</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> The network splits the data into two paths. The Main Path learns new feature transformations (F(x)), while the Skip Path passes the original data unchanged (x). They are added together at the end: Output = F(x) + x. This allows deep networks to learn residual functions and prevents the vanishing gradient problem.
+                        </div>
+                    </div>
+
+                    <div class="residual-layout" style="margin-top: 30px;">
+                        <!-- Input -->
+                        <div class="res-node res-input">
+                            <h4>Input Map</h4>
+                            <canvas id="res-input-canvas" width="64" height="64" style="image-rendering:pixelated; width:120px;"></canvas>
+                        </div>
+
+                        <!-- Split Flow -->
+                        <div class="res-split">
+                            <!-- Main Path -->
+                            <div class="res-path res-path-main" title="F(x)">
+                                <div class="res-path-label">Main Path [ F(x) ]</div>
+                                <div class="res-blocks">
+                                    <div class="res-block">Conv</div>
+                                    <div class="res-block">BN</div>
+                                    <div class="res-block">ReLU</div>
+                                    <div class="res-block">Conv</div>
+                                    <div class="res-block">BN</div>
+                                </div>
+                                <canvas id="res-main-canvas" width="64" height="64" style="image-rendering:pixelated; width:120px;"></canvas>
+                            </div>
+
+                            <!-- Skip Path -->
+                            <div class="res-path res-path-skip" title="x">
+                                <div class="res-path-label">Skip Path [ x ]</div>
+                                <div class="res-wire"></div>
+                                <canvas id="res-skip-canvas" width="64" height="64" style="image-rendering:pixelated; width:120px;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Merge Junction -->
+                        <div class="res-merge" title="Output = F(x) + x">
+                            <div class="res-plus">(+)</div>
+                        </div>
+
+                        <!-- Output -->
+                        <div class="res-node res-output">
+                            <h4>Merged Output</h4>
+                            <canvas id="res-output-canvas" width="64" height="64" style="image-rendering:pixelated; width:120px;"></canvas>
+                            <div class="kernel-hint" id="res-status" style="margin-top:12px;">Combining original features with learned transformations...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline connector 6-7 -->
+            <div class="step-connector" id="step-connector-6-7" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Passing merged features to Flatten Layer...</span>
+            </div>
+
+            <!-- STEP 7: Flatten Layer -->
+            <div class="step-card" id="step-7" style="display: none; position: relative;">
+                <div class="step-card__header">
+                    <div class="step-number">7</div>
+                    <h2 class="step-title">Flatten Layer <span class="hero__title-thin">– Conversion Step</span></h2>
+                </div>
+                <div class="step-card__body" id="flatten-body" style="position: relative;">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> Flattening converts the spatial 2D feature map into a 1D vector. This breaks the spatial structure but prepares the 4,096 features to be fed into the Dense classification layers.
+                        </div>
+                    </div>
+
+                    <!-- Overlay canvas for particle animation -->
+                    <canvas id="flatten-overlay-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;"></canvas>
+
+                    <!-- Layout: 2D map -> Flow -> 1D Vector -->
+                    <div class="visual-grid" style="margin-top: 30px;">
+                        
+                        <!-- Input (Left) -->
+                        <div class="vis-panel">
+                            <h4>Pooled 2D Map <span class="kernel-hint">64×64</span></h4>
+                            <div class="vis-panel__canvas-wrap" id="flatten-left-wrap">
+                                <canvas id="flatten-input-canvas" width="64" height="64" style="image-rendering: pixelated; width: 100%; max-width: 200px; border: 1px solid rgba(255,255,255,0.2);"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Flow (Center) -->
+                        <div class="vis-panel" style="background:transparent; border:none; justify-content: center;">
+                            <h4>Conversion Flow</h4>
+                            <div class="kernel-hint" id="flatten-status">Waiting for input...</div>
+                            <button class="btn-primary" id="btn-start-flatten" style="margin-top: 20px; display: none;">▶ Flatten Array</button>
+                        </div>
+
+                        <!-- Output (Right) -->
+                        <div class="vis-panel">
+                            <h4>1D Vector <span class="kernel-hint">4096×1</span></h4>
+                            <div class="flatten-vector-container" id="flatten-right-wrap">
+                                <canvas id="flatten-vector-canvas" width="1" height="4096"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Pipeline connector 7-8 -->
+            <div class="step-connector" id="step-connector-7-8" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Transforming features into final prediction...</span>
+            </div>
+
+            <!-- STEP 8: Fully Connected Layer -->
+            <div class="step-card" id="step-8" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">8</div>
+                    <h2 class="step-title">Fully Connected Layer <span class="hero__title-thin">– Decision Network</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> Every neuron in one layer is connected to every neuron in the next. Signals (feature values) flow through weighted connections, and each neuron produces an output based on the sum of its inputs. Brighter nodes and connections indicate stronger signals.
+                        </div>
+                    </div>
+
+                    <!-- FC Network Canvas -->
+                    <div class="fc-network-wrap">
+                        <canvas id="fc-canvas"></canvas>
+                        <div id="fc-tooltip" class="fc-tooltip" style="display:none;"></div>
+                    </div>
+                    <div class="kernel-hint" id="fc-status" style="text-align:center; margin-top: 16px;">Propagating signals through dense layers...</div>
+                </div>
+            </div>
+
+            <!-- Pipeline connector 8-9 -->
+            <div class="step-connector" id="step-connector-8-9" style="display: none;">
+                <div class="connector-line"></div>
+                <div class="connector-pulse"></div>
+                <span class="connector-label">Computing class probabilities via Softmax...</span>
+            </div>
+
+            <!-- STEP 9: Softmax Output -->
+            <div class="step-card" id="step-9" style="display: none;">
+                <div class="step-card__header">
+                    <div class="step-number">9</div>
+                    <h2 class="step-title">Output Layer <span class="hero__title-thin">– Softmax Prediction</span></h2>
+                </div>
+                <div class="step-card__body">
+                    <div class="tooltip-label">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <div>
+                            <strong>How it works:</strong> Softmax converts raw network scores into a probability distribution. Every class gets a probability value between 0–1, and they all sum to 100%. The class with the highest probability is the final prediction.
+                        </div>
+                    </div>
+
+                    <!-- Final Prediction Banner -->
+                    <div class="softmax-prediction-banner" id="softmax-banner">
+                        <div class="softmax-prediction-label">Final Prediction</div>
+                        <div class="softmax-prediction-class" id="softmax-class">—</div>
+                        <div class="softmax-prediction-conf" id="softmax-conf">Confidence: —</div>
+                    </div>
+
+                    <!-- Probability bars -->
+                    <div class="softmax-bars" id="softmax-bars">
+                        <!-- Dynamically populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </section>
+         
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+        <p>DeepVision © 2026 · ResNet CNN Learning Explainer</p>
+    </footer>
+
+    <script src="cnn.js"></script>
+</body>
+</html>
